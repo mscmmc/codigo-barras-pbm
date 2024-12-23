@@ -1,0 +1,16 @@
+# Arquivos de compilação
+*.o
+*.out
+*.exe
+gerador
+extrator
+
+# Backups e arquivos temporários do editor
+*~
+*.swp
+*.swo
+*.tmp
+
+# Diretórios de build ou binários
+/build/
+
