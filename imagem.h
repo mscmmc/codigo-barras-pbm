@@ -8,6 +8,10 @@
 
 #include <stdbool.h>
 
+// Constantes para os valores dos pixels
+#define PIXEL_BRANCO 0
+#define PIXEL_PRETO 1
+
 // Struct para representar uma imagem PBM
 typedef struct {
     int largura;    // Largura da imagem em pixels
