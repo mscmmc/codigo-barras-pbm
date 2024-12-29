@@ -46,50 +46,55 @@ int validarEAN8(const char *codigo) {
 void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     int larguraTotal = 0;
 
-    // Codificar os 4 primeiros dígitos (L-code)
+    // Calcular largura total necessária
     for (int i = 0; i < 4; i++) {
-        const char *codigoL = L_code[codigo[i] - '0'];
-        larguraTotal += strlen(codigoL); // Soma a largura das barras
+        larguraTotal += strlen(L_code[codigo[i] - '0']);
     }
-
-    // Codificar os 4 últimos dígitos (R-code)
     for (int i = 4; i < 8; i++) {
-        const char *codigoR = R_code[codigo[i] - '0'];
-        larguraTotal += strlen(codigoR); // Soma a largura das barras
+        larguraTotal += strlen(R_code[codigo[i] - '0']);
     }
+    larguraTotal += 2 * strlen("101") + strlen("01010"); // Marcadores
 
-    // Adicionar os marcadores
-    larguraTotal += 2 * strlen("101") + strlen("01010"); // Marcadores iniciais, centrais e finais
-
-    // Ajustar a largura da imagem para o valor fornecido
+    // Ajustar largura mínima da imagem
     if (imagem->largura < larguraTotal) {
-        imagem->largura = larguraTotal; // Garantir que a largura mínima seja a calculada
+        imagem->largura = larguraTotal;
     }
-
     imagem->altura = 100; // Altura padrão
 
-    // Preencher a imagem com as barras e espaços
+    // Inicializar a imagem com zeros
+    for (int i = 0; i < imagem->altura; i++) {
+        for (int j = 0; j < imagem->largura; j++) {
+            imagem->pixels[i][j] = 0; // Branco
+        }
+    }
+
     int pos = 0;
-    // Marcador inicial
-    for (int i = 0; i < strlen("101"); i++) {
-        imagem->pixels[0][pos++] = 1; // Barra preta
+
+    // Marcador inicial "101"
+    const char *start = "101";
+    for (int i = 0; i < strlen(start); i++) {
+        for (int k = 0; k < imagem->altura; k++) {
+            imagem->pixels[k][pos] = (start[i] == '1') ? 1 : 0;
+        }
+        pos++;
     }
 
     // Codificar os 4 primeiros dígitos com L-code
     for (int i = 0; i < 4; i++) {
         const char *codigoL = L_code[codigo[i] - '0'];
         for (int j = 0; j < strlen(codigoL); j++) {
-            for (int k = 0; k < imagem->altura; k++) { // Ajusta a altura para as barras
+            for (int k = 0; k < imagem->altura; k++) {
                 imagem->pixels[k][pos] = (codigoL[j] == '1') ? 1 : 0;
             }
             pos++;
         }
     }
 
-    // Marcador central
-    for (int i = 0; i < strlen("01010"); i++) {
+    // Marcador central "01010"
+    const char *middle = "01010";
+    for (int i = 0; i < strlen(middle); i++) {
         for (int k = 0; k < imagem->altura; k++) {
-            imagem->pixels[k][pos] = (i % 2 == 0) ? 1 : 0; // Alterna entre barra e espaço
+            imagem->pixels[k][pos] = (middle[i] == '1') ? 1 : 0;
         }
         pos++;
     }
@@ -98,21 +103,22 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     for (int i = 4; i < 8; i++) {
         const char *codigoR = R_code[codigo[i] - '0'];
         for (int j = 0; j < strlen(codigoR); j++) {
-            for (int k = 0; k < imagem->altura; k++) { // Ajusta a altura para as barras
+            for (int k = 0; k < imagem->altura; k++) {
                 imagem->pixels[k][pos] = (codigoR[j] == '1') ? 1 : 0;
             }
             pos++;
         }
     }
 
-    // Marcador final
-    for (int i = 0; i < strlen("101"); i++) {
+    // Marcador final "101"
+    for (int i = 0; i < strlen(start); i++) {
         for (int k = 0; k < imagem->altura; k++) {
-            imagem->pixels[k][pos] = 1; // Barra preta
+            imagem->pixels[k][pos] = (start[i] == '1') ? 1 : 0;
         }
         pos++;
     }
 }
+
 
 
 // Função para lidar com os argumentos da linha de comando
