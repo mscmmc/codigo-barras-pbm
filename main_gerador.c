@@ -46,35 +46,40 @@ int validarEAN8(const char *codigo) {
 void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     int larguraTotal = 0;
 
-    // Calcular largura total necessária
+    // Codificar os 4 primeiros dígitos (L-code)
     for (int i = 0; i < 4; i++) {
         larguraTotal += strlen(L_code[codigo[i] - '0']);
     }
+
+    // Codificar os 4 últimos dígitos (R-code)
     for (int i = 4; i < 8; i++) {
         larguraTotal += strlen(R_code[codigo[i] - '0']);
     }
-    larguraTotal += 2 * strlen("101") + strlen("01010"); // Marcadores
 
-    // Ajustar largura mínima da imagem
-    if (imagem->largura < larguraTotal) {
-        imagem->largura = larguraTotal;
-    }
-    imagem->altura = 100; // Altura padrão
+    // Adicionar os marcadores
+    larguraTotal += 2 * strlen("101") + strlen("01010");
 
-    // Inicializar a imagem com zeros
+    // Calcular margens horizontais
+    int margemEsquerda = (imagem->largura - larguraTotal) / 2;
+    int margemDireita = imagem->largura - larguraTotal - margemEsquerda;
+
+    // Calcular margens verticais
+    int margemSuperior = (imagem->altura - 100) / 2;
+    int margemInferior = imagem->altura - 100 - margemSuperior;
+
+    // Preencher a imagem com zeros
     for (int i = 0; i < imagem->altura; i++) {
         for (int j = 0; j < imagem->largura; j++) {
-            imagem->pixels[i][j] = 0; // Branco
+            imagem->pixels[i][j] = PIXEL_BRANCO;
         }
     }
 
-    int pos = 0;
+    int pos = margemEsquerda; // Começar após a margem esquerda
 
-    // Marcador inicial "101"
-    const char *start = "101";
-    for (int i = 0; i < strlen(start); i++) {
-        for (int k = 0; k < imagem->altura; k++) {
-            imagem->pixels[k][pos] = (start[i] == '1') ? 1 : 0;
+    // Marcador inicial
+    for (int i = 0; i < strlen("101"); i++) {
+        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
@@ -83,18 +88,17 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     for (int i = 0; i < 4; i++) {
         const char *codigoL = L_code[codigo[i] - '0'];
         for (int j = 0; j < strlen(codigoL); j++) {
-            for (int k = 0; k < imagem->altura; k++) {
-                imagem->pixels[k][pos] = (codigoL[j] == '1') ? 1 : 0;
+            for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+                imagem->pixels[k][pos] = (codigoL[j] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
             }
             pos++;
         }
     }
 
-    // Marcador central "01010"
-    const char *middle = "01010";
-    for (int i = 0; i < strlen(middle); i++) {
-        for (int k = 0; k < imagem->altura; k++) {
-            imagem->pixels[k][pos] = (middle[i] == '1') ? 1 : 0;
+    // Marcador central
+    for (int i = 0; i < strlen("01010"); i++) {
+        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
@@ -103,21 +107,22 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     for (int i = 4; i < 8; i++) {
         const char *codigoR = R_code[codigo[i] - '0'];
         for (int j = 0; j < strlen(codigoR); j++) {
-            for (int k = 0; k < imagem->altura; k++) {
-                imagem->pixels[k][pos] = (codigoR[j] == '1') ? 1 : 0;
+            for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+                imagem->pixels[k][pos] = (codigoR[j] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
             }
             pos++;
         }
     }
 
-    // Marcador final "101"
-    for (int i = 0; i < strlen(start); i++) {
-        for (int k = 0; k < imagem->altura; k++) {
-            imagem->pixels[k][pos] = (start[i] == '1') ? 1 : 0;
+    // Marcador final
+    for (int i = 0; i < strlen("101"); i++) {
+        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
 }
+
 
 
 
