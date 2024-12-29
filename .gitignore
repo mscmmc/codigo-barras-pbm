@@ -11,6 +11,9 @@ extrator
 *.swo
 *.tmp
 
+# Arquivos de teste
+*.bmp
+
 # Diretórios de build ou binários
 /build/
 
