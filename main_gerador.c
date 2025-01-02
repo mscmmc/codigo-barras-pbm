@@ -129,7 +129,7 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
 // Função para lidar com os argumentos da linha de comando
 void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int *altura, char *nomeArquivo) {
     if (argc < 2) {
-        printf("Uso: %s <codigo-ean-8> [largura] [altura] [nome-arquivo]\n", argv[0]);
+        printf("Uso: %s <codigo-ean-8> [--largura <valor>] [--altura <valor (>= 100)>] [--arquivo <nome>]\n", argv[0]);
         exit(1);
     }
 
@@ -151,11 +151,16 @@ void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int
             *largura = atoi(argv[++i]);
         } else if (strcmp(argv[i], "--altura") == 0 && i + 1 < argc) {
             *altura = atoi(argv[++i]);
+            if (*altura < 100) {
+                printf("Altura mínima é 100. Ajustando para 100.\n");
+                *altura = 100;
+            }
         } else if (strcmp(argv[i], "--arquivo") == 0 && i + 1 < argc) {
             strcpy(nomeArquivo, argv[++i]);
         }
     }
 }
+
 
 int main(int argc, char *argv[]) {
     char codigo[9];
