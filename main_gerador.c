@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <unistd.h>  // Para usar a função access() para verificar se o arquivo existe
 #include "imagem.h"
 
 // Tabelas de codificação L e R para os dígitos
@@ -17,11 +18,15 @@ const char *R_code[] = {
 
 // Função para validar o código EAN-8
 int validarEAN8(const char *codigo) {
-    if (strlen(codigo) != 8) return 0; // O código deve ter 8 dígitos
+    if (strlen(codigo) != 8) {
+        printf("Erro: O código deve ter 8 dígitos.\n");
+        return 0; // O código deve ter 8 dígitos
+    }
 
     // Verificar se todos os caracteres são dígitos
     for (int i = 0; i < 8; i++) {
         if (!isdigit(codigo[i])) {
+            printf("Erro: O código contém caracteres não numéricos.\n");
             return 0; // Código inválido, contém caracteres não numéricos
         }
     }
@@ -39,9 +44,15 @@ int validarEAN8(const char *codigo) {
     int digitoVerificador = (10 - (soma % 10)) % 10;
 
     // Verificar se o dígito verificador está correto
-    return (codigo[7] - '0') == digitoVerificador;
+    if ((codigo[7] - '0') != digitoVerificador) {
+        printf("Erro: O dígito verificador do código é inválido.\n");
+        return 0;
+    }
+
+    return 1;
 }
 
+// Função para desenhar as barras
 void desenharBarra(ImagemPBM *imagem, int *pos, const char *codigoBinario, int espessura, int margemSuperior, int margemInferior) {
     for (int i = 0; i < strlen(codigoBinario); i++) {
         for (int e = 0; e < espessura; e++) { // Replicação horizontal
@@ -110,8 +121,7 @@ void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int
     // Validar o código EAN-8
     strcpy(codigo, argv[1]);
     if (!validarEAN8(codigo)) {
-        printf("Código EAN-8 inválido.\n");
-        exit(1);
+        exit(1); // Se o código for inválido, interrompe a execução
     }
 
     // Valores padrão
@@ -142,6 +152,11 @@ void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int
     }
 }
 
+// Função para verificar se o arquivo já existe
+int arquivoExiste(const char *nomeArquivo) {
+    return access(nomeArquivo, F_OK) != -1; // Retorna 1 se o arquivo existir, 0 caso contrário
+}
+
 int main(int argc, char *argv[]) {
     char codigo[9];
     int largura, altura, espessura;
@@ -149,6 +164,21 @@ int main(int argc, char *argv[]) {
 
     processarArgumentos(argc, argv, codigo, &largura, &altura, nomeArquivo, &espessura);
 
+    // Verificar se o arquivo já existe
+	if (arquivoExiste(nomeArquivo)) {
+        char resposta[4]; 
+        printf("O arquivo '%s' já existe. Deseja sobrescrevê-lo? (sim/não): ", nomeArquivo);
+        fgets(resposta, sizeof(resposta), stdin);
+
+        // Remover o caractere de nova linha
+        resposta[strcspn(resposta, "\n")] = 0;
+
+        // Comparar a resposta com "não" e "nao"
+        if (strcmp(resposta, "não") == 0 || strcmp(resposta, "nao") == 0) {
+            printf("Erro: arquivo resultante já existe.\n");
+            return 1; // Parar a execução
+        }
+    }
     // Criar a imagem
     ImagemPBM *imagem = criarImagem(largura, altura);
     if (!imagem) {
@@ -171,5 +201,3 @@ int main(int argc, char *argv[]) {
     liberarImagem(imagem);
     return 0;
 }
-
-
