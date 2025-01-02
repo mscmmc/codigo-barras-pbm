@@ -13,6 +13,7 @@ extrator
 
 # Arquivos de teste
 *.bmp
+*.pbm
 
 # Diretórios de build ou binários
 /build/
