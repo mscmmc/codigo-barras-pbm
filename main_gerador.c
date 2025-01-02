@@ -79,7 +79,7 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     // Marcador inicial
     for (int i = 0; i < strlen("101"); i++) {
         for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
+            imagem->pixels[k][pos] = ("101"[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
@@ -96,9 +96,10 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     }
 
     // Marcador central
-    for (int i = 0; i < strlen("01010"); i++) {
+    const char *marcadorCentral = "01010";
+    for (int i = 0; i < strlen(marcadorCentral); i++) {
         for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
+            imagem->pixels[k][pos] = (marcadorCentral[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
@@ -117,13 +118,11 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
     // Marcador final
     for (int i = 0; i < strlen("101"); i++) {
         for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = (i % 2 == 0) ? PIXEL_PRETO : PIXEL_BRANCO;
+            imagem->pixels[k][pos] = ("101"[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
         }
         pos++;
     }
 }
-
-
 
 
 // Função para lidar com os argumentos da linha de comando
