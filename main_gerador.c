@@ -42,28 +42,32 @@ int validarEAN8(const char *codigo) {
     return (codigo[7] - '0') == digitoVerificador;
 }
 
+void desenharBarra(ImagemPBM *imagem, int *pos, const char *codigoBinario, int espessura, int margemSuperior, int margemInferior) {
+    for (int i = 0; i < strlen(codigoBinario); i++) {
+        for (int e = 0; e < espessura; e++) { // Replicação horizontal
+            for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
+                imagem->pixels[k][*pos] = (codigoBinario[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
+            }
+            (*pos)++;
+        }
+    }
+}
+
 // Função para gerar o código de barras EAN-8
-void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
+void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem, int espessura) {
     int larguraTotal = 0;
 
-    // Codificar os 4 primeiros dígitos (L-code)
+    // Calcular a largura total ajustada pela espessura
     for (int i = 0; i < 4; i++) {
-        larguraTotal += strlen(L_code[codigo[i] - '0']);
+        larguraTotal += strlen(L_code[codigo[i] - '0']) * espessura;
     }
-
-    // Codificar os 4 últimos dígitos (R-code)
     for (int i = 4; i < 8; i++) {
-        larguraTotal += strlen(R_code[codigo[i] - '0']);
+        larguraTotal += strlen(R_code[codigo[i] - '0']) * espessura;
     }
+    larguraTotal += 2 * strlen("101") * espessura + strlen("01010") * espessura;
 
-    // Adicionar os marcadores
-    larguraTotal += 2 * strlen("101") + strlen("01010");
-
-    // Calcular margens horizontais
     int margemEsquerda = (imagem->largura - larguraTotal) / 2;
     int margemDireita = imagem->largura - larguraTotal - margemEsquerda;
-
-    // Calcular margens verticais
     int margemSuperior = (imagem->altura - 100) / 2;
     int margemInferior = imagem->altura - 100 - margemSuperior;
 
@@ -74,61 +78,32 @@ void gerarCodigoDeBarras(const char *codigo, ImagemPBM *imagem) {
         }
     }
 
-    int pos = margemEsquerda; // Começar após a margem esquerda
+    int pos = margemEsquerda;
 
     // Marcador inicial
-    for (int i = 0; i < strlen("101"); i++) {
-        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = ("101"[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
-        }
-        pos++;
-    }
+    desenharBarra(imagem, &pos, "101", espessura, margemSuperior, margemInferior);
 
-    // Codificar os 4 primeiros dígitos com L-code
+    // Codificar os 4 primeiros dígitos
     for (int i = 0; i < 4; i++) {
-        const char *codigoL = L_code[codigo[i] - '0'];
-        for (int j = 0; j < strlen(codigoL); j++) {
-            for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-                imagem->pixels[k][pos] = (codigoL[j] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
-            }
-            pos++;
-        }
+        desenharBarra(imagem, &pos, L_code[codigo[i] - '0'], espessura, margemSuperior, margemInferior);
     }
 
     // Marcador central
-    const char *marcadorCentral = "01010";
-    for (int i = 0; i < strlen(marcadorCentral); i++) {
-        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = (marcadorCentral[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
-        }
-        pos++;
-    }
+    desenharBarra(imagem, &pos, "01010", espessura, margemSuperior, margemInferior);
 
-    // Codificar os 4 últimos dígitos com R-code
+    // Codificar os 4 últimos dígitos
     for (int i = 4; i < 8; i++) {
-        const char *codigoR = R_code[codigo[i] - '0'];
-        for (int j = 0; j < strlen(codigoR); j++) {
-            for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-                imagem->pixels[k][pos] = (codigoR[j] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
-            }
-            pos++;
-        }
+        desenharBarra(imagem, &pos, R_code[codigo[i] - '0'], espessura, margemSuperior, margemInferior);
     }
 
     // Marcador final
-    for (int i = 0; i < strlen("101"); i++) {
-        for (int k = margemSuperior; k < imagem->altura - margemInferior; k++) {
-            imagem->pixels[k][pos] = ("101"[i] == '1') ? PIXEL_PRETO : PIXEL_BRANCO;
-        }
-        pos++;
-    }
+    desenharBarra(imagem, &pos, "101", espessura, margemSuperior, margemInferior);
 }
 
-
 // Função para lidar com os argumentos da linha de comando
-void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int *altura, char *nomeArquivo) {
+void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int *altura, char *nomeArquivo, int *espessura) {
     if (argc < 2) {
-        printf("Uso: %s <codigo-ean-8> [--largura <valor>] [--altura <valor (>= 100)>] [--arquivo <nome>]\n", argv[0]);
+        printf("Uso: %s <codigo-ean-8> [--largura <valor>] [--altura <valor (>= 100)>] [--arquivo <nome>] [--espessura <valor>]\n", argv[0]);
         exit(1);
     }
 
@@ -139,9 +114,10 @@ void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int
         exit(1);
     }
 
-    // Definir valores padrão
+    // Valores padrão
     *largura = 200;
     *altura = 100;
+    *espessura = 1; // Padrão: 1 pixel por bit
     strcpy(nomeArquivo, "codigo_barras.pbm");
 
     // Processar os argumentos opcionais
@@ -156,17 +132,22 @@ void processarArgumentos(int argc, char *argv[], char *codigo, int *largura, int
             }
         } else if (strcmp(argv[i], "--arquivo") == 0 && i + 1 < argc) {
             strcpy(nomeArquivo, argv[++i]);
+        } else if (strcmp(argv[i], "--espessura") == 0 && i + 1 < argc) {
+            *espessura = atoi(argv[++i]);
+            if (*espessura < 1) {
+                printf("Espessura mínima é 1. Ajustando para 1.\n");
+                *espessura = 1;
+            }
         }
     }
 }
 
-
 int main(int argc, char *argv[]) {
     char codigo[9];
-    int largura, altura;
+    int largura, altura, espessura;
     char nomeArquivo[100];
 
-    processarArgumentos(argc, argv, codigo, &largura, &altura, nomeArquivo);
+    processarArgumentos(argc, argv, codigo, &largura, &altura, nomeArquivo, &espessura);
 
     // Criar a imagem
     ImagemPBM *imagem = criarImagem(largura, altura);
@@ -176,7 +157,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Gerar o código de barras
-    gerarCodigoDeBarras(codigo, imagem);
+    gerarCodigoDeBarras(codigo, imagem, espessura);
 
     // Salvar a imagem PBM
     if (!salvarImagemPBM(nomeArquivo, imagem)) {
@@ -187,9 +168,8 @@ int main(int argc, char *argv[]) {
 
     printf("Imagem gerada com sucesso!\n");
 
-    // Liberar a memória
     liberarImagem(imagem);
-
     return 0;
 }
+
 
