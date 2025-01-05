@@ -6,8 +6,6 @@
 #define PIXEL_BRANCO 0
 #define PIXEL_PRETO 1
 
-#define EAN8_LARGURA 67 // Largura esperada de um código EAN-8
-
 // Tabelas de codificação L e R para os dígitos
 
 char* L_code[] = {"0001101", "0011001", "0010011", "0111101", "0100011", "0110001", "0101111", "0111011", "0110111", "0001011"};
@@ -89,14 +87,12 @@ void converterLinhaParaString(int *linha, int largura, char *codigo) {
 void converterBarraParaDigitos(char *codigo, int *digitos) {
     char digito[8];
     int j = 0;
-    printf("Dígitos convertidos: ");
     for (int i = 3; i < 31; i += 7) {
         strncpy(digito, &codigo[i], 7);
         digito[7] = '\0';
         for (int k = 0; k < 10; k++) {
             if (strcmp(digito, L_code[k]) == 0) {
                 digitos[j++] = k;
-                printf("%d ", k);
                 break;
             }
         }
@@ -107,7 +103,6 @@ void converterBarraParaDigitos(char *codigo, int *digitos) {
         for (int k = 0; k < 10; k++) {
             if (strcmp(digito, R_code[k]) == 0) {
                 digitos[j++] = k;
-                printf("%d ", k);
                 break;
             }
         }
@@ -136,12 +131,10 @@ void processarCodigoBarras(ImagemPBM *imagem) {
     int linhaDoMeio = imagem->altura / 2;
     char codigo[imagem->largura + 1];
     int digitos[8] = {0};
+
     converterLinhaParaString(imagem->pixels[linhaDoMeio], imagem->largura, codigo);
 
-    printf("Vetor extraído da linha do meio:\n%s\n", codigo);
-
     removerMargens(codigo);
-    printf("Vetor sem margens:\n%s\n", codigo);
 
     char *codigoNormalizado = normalizarCodigo(codigo);
     if (!codigoNormalizado) {
@@ -149,23 +142,22 @@ void processarCodigoBarras(ImagemPBM *imagem) {
         return;
     }
 
-    printf("Vetor normalizado:\n%s\n", codigoNormalizado);
     converterBarraParaDigitos(codigoNormalizado, digitos);
     free(codigoNormalizado);
 
     if (strlen(codigo) < 67) {
-        printf("Erro: Código de barras inválido ou malformado.\n");
+        printf("Erro: Codigo de barras invalido ou malformado.\n");
         return;
     }
 
     int digitoVerificadorCalculado = obterDigitoVerificador(digitos);
-    printf("Dígito verificador calculado: %d\n", digitoVerificadorCalculado);
-    printf("Dígito verificador do código: %d\n", digitos[7]);
+    printf("Digito verificador calculado: %d\n", digitoVerificadorCalculado);
+    printf("Digito verificador do codigo: %d\n", digitos[7]);
 
     if (digitoVerificadorCalculado == digitos[7]) {
-        printf("O código de barras EAN-8 é válido.\n");
+        printf("O codigo de barras EAN-8 eh valido.\n");
     } else {
-        printf("O código de barras EAN-8 é inválido.\n");
+        printf("O codigo de barras EAN-8 eh invalido.\n");
     }
 }
 
@@ -179,9 +171,6 @@ int main(int argc, char *argv[]) {
     if (!imagem) {
         return 1;
     }
-
-    printf("Matriz da imagem PBM:\n");
-    imprimirMatriz(imagem);
 
     processarCodigoBarras(imagem);
 
